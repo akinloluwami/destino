@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from "express";
+import express, { Express } from "express";
 import fs from "fs";
 import path from "path";
 
@@ -12,6 +12,8 @@ export const createServer = (port: number) => {
     DELETE: app.delete.bind(app),
   };
 
+  const registeredMiddleware: Set<string> = new Set(); // Track registered middleware
+
   const applyMiddlewares = (dir: string) => {
     const files = fs.readdirSync(dir);
     files.forEach((file) => {
@@ -21,8 +23,9 @@ export const createServer = (port: number) => {
       if (stat.isDirectory()) {
         applyMiddlewares(filePath);
       } else {
-        if (isMiddlewareFile(file)) {
+        if (isMiddlewareFile(file) && !registeredMiddleware.has(filePath)) {
           registerMiddlewareFromFile(filePath);
+          registeredMiddleware.add(filePath); // Mark middleware as registered
         }
       }
     });
