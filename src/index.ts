@@ -1,43 +1,57 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Express } from "express";
 import fs from "fs";
 import path from "path";
 
-const app = express();
-const PORT = 3344;
+export const createServer = (port: number) => {
+  const app: Express = express();
 
-const loadRoutes = (dir: string) => {
-  fs.readdirSync(dir).forEach((file) => {
-    const filePath = path.join(dir, file);
-    const route = require(filePath);
+  const methodMap: { [key: string]: Function } = {
+    GET: app.get.bind(app),
+    POST: app.post.bind(app),
+    PUT: app.put.bind(app),
+    DELETE: app.delete.bind(app),
+  };
 
-    const routePath = "/" + file.replace(/\.[^/.]+$/, "");
+  const loadRoutes = (dir: string) => {
+    const files = fs.readdirSync(dir);
+    files.forEach((file) => {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
 
-    Object.keys(route).forEach((method) => {
-      const handler = route[method];
+      if (stat.isDirectory()) {
+        loadRoutes(filePath);
+      } else {
+        const extname = path.extname(filePath);
+        if (extname === ".ts" || extname === ".js") {
+          const route = require(filePath);
+          let routePath = path.relative(routesDir, filePath);
+          routePath = routePath.replace(/\.[^/.]+$/, "");
+          routePath = routePath.replace(/\\/g, "/");
+          routePath = `/${routePath}`;
 
-      switch (method.toUpperCase()) {
-        case "GET":
-          app.get(routePath, handler);
-          break;
-        case "POST":
-          app.post(routePath, handler);
-          break;
-        case "PUT":
-          app.put(routePath, handler);
-          break;
-        case "DELETE":
-          app.delete(routePath, handler);
-          break;
-        default:
-          console.warn(`Unknown method ${method} in file ${file}`);
+          routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
+
+          console.log(`Registering route: ${routePath}`);
+          Object.keys(route).forEach((method) => {
+            const handler = route[method];
+            const expressMethod = methodMap[method.toUpperCase()];
+            if (expressMethod) {
+              expressMethod(routePath, handler);
+            } else {
+              console.warn(`Unknown method ${method} in file ${file}`);
+            }
+          });
+        }
       }
     });
+  };
+
+  const callerDir = path.dirname(require.main!.filename);
+  const routesDir = path.join(callerDir, "routes");
+
+  loadRoutes(routesDir);
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 };
-
-const routesDir = path.join(__dirname, "routes");
-loadRoutes(routesDir);
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
