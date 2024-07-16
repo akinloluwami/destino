@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 export function GET(req: Request, res: Response) {
+  console.log("TEST");
   res.send("GET User");
 }
 

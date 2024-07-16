@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express, { Express, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 
@@ -12,6 +12,22 @@ export const createServer = (port: number) => {
     DELETE: app.delete.bind(app),
   };
 
+  const applyMiddlewares = (dir: string) => {
+    const files = fs.readdirSync(dir);
+    files.forEach((file) => {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+
+      if (stat.isDirectory()) {
+        applyMiddlewares(filePath);
+      } else {
+        if (isMiddlewareFile(file)) {
+          registerMiddlewareFromFile(filePath);
+        }
+      }
+    });
+  };
+
   const loadRoutes = (dir: string) => {
     const files = fs.readdirSync(dir);
     files.forEach((file) => {
@@ -19,11 +35,21 @@ export const createServer = (port: number) => {
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
+        applyMiddlewares(filePath);
         loadRoutes(filePath);
       } else {
-        registerRouteFromFile(filePath);
+        if (!isMiddlewareFile(file)) {
+          registerRouteFromFile(filePath);
+        }
       }
     });
+  };
+
+  const isMiddlewareFile = (file: string): boolean => {
+    return (
+      file.startsWith("_middleware") &&
+      (file.endsWith(".ts") || file.endsWith(".js"))
+    );
   };
 
   const registerRouteFromFile = (filePath: string) => {
@@ -41,7 +67,6 @@ export const createServer = (port: number) => {
       routePath = `/${routePath}`.replace(/\/index$/, "");
       routePath = routePath.replace(/\\/g, "/");
 
-      // Replace dynamic segments
       routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
 
       console.log(`Registering route: ${routePath}`);
@@ -57,9 +82,19 @@ export const createServer = (port: number) => {
     }
   };
 
+  const registerMiddlewareFromFile = (filePath: string) => {
+    const extname = path.extname(filePath);
+    if (extname === ".ts" || extname === ".js") {
+      const middleware = require(filePath).default;
+      console.log(`Registering middleware: ${filePath}`);
+      app.use(middleware);
+    }
+  };
+
   const callerDir = path.dirname(require.main!.filename);
   const routesDir = path.join(callerDir, "routes");
 
+  applyMiddlewares(routesDir);
   loadRoutes(routesDir);
 
   app.listen(port, () => {
