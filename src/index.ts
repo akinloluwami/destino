@@ -19,20 +19,7 @@ export const createServer = (port: number) => {
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
-        const indexFilePath = path.join(filePath, "index.ts");
-        const indexJsFilePath = path.join(filePath, "index.js");
-
-        if (fs.existsSync(indexFilePath)) {
-          registerRoute("/", indexFilePath, path.relative(routesDir, filePath));
-        } else if (fs.existsSync(indexJsFilePath)) {
-          registerRoute(
-            "/",
-            indexJsFilePath,
-            path.relative(routesDir, filePath)
-          );
-        } else {
-          loadRoutes(filePath);
-        }
+        loadRoutes(filePath);
       } else {
         registerRouteFromFile(filePath);
       }
@@ -46,8 +33,15 @@ export const createServer = (port: number) => {
       let routePath = path.relative(routesDir, filePath);
       routePath = routePath.replace(/\.[^/.]+$/, "");
       routePath = routePath.replace(/\\/g, "/");
-      routePath = `/${routePath}`;
 
+      if (path.basename(routePath) === "index") {
+        routePath = path.dirname(routePath);
+      }
+
+      routePath = `/${routePath}`.replace(/\/index$/, "");
+      routePath = routePath.replace(/\\/g, "/");
+
+      // Replace dynamic segments
       routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
 
       console.log(`Registering route: ${routePath}`);
@@ -61,27 +55,6 @@ export const createServer = (port: number) => {
         }
       });
     }
-  };
-
-  const registerRoute = (
-    routePath: string,
-    filePath: string,
-    parentDir: string
-  ) => {
-    const route = require(filePath);
-    routePath = path.join("/", parentDir).replace(/\\/g, "/");
-    routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
-
-    console.log(`Registering route: ${routePath}`);
-    Object.keys(route).forEach((method) => {
-      const handler = route[method];
-      const expressMethod = methodMap[method.toUpperCase()];
-      if (expressMethod) {
-        expressMethod(routePath, handler);
-      } else {
-        console.warn(`Unknown method ${method} in file ${filePath}`);
-      }
-    });
   };
 
   const callerDir = path.dirname(require.main!.filename);
