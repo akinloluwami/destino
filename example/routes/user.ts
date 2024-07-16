@@ -6,7 +6,8 @@ export function GET(req: Request, res: Response) {
 }
 
 export function POST(req: Request, res: Response) {
-  res.send("POST User");
+  const { username, email, password } = req.body;
+  res.status(200).json({ message: "New user", username });
 }
 
 export function DELETE(req: Request, res: Response) {

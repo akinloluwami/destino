@@ -1,9 +1,27 @@
 import express, { Express } from "express";
 import fs from "fs";
 import path from "path";
+import { Config } from "./config.type";
 
-export const createServer = (port: number) => {
+export const createServer = () => {
   const app: Express = express();
+
+  let config: Config;
+  try {
+    const configPath = path.resolve(process.cwd(), "destiny.config");
+    config = require(configPath).default;
+  } catch (error) {
+    console.log("Config file is not present. Using default.");
+    config = {} as Config;
+  }
+
+  if (config.enableJsonParser) {
+    app.use(express.json());
+  }
+
+  if (config.enableUrlencoded) {
+    app.use(express.urlencoded({ extended: true }));
+  }
 
   const methodMap: { [key: string]: Function } = {
     GET: app.get.bind(app),
@@ -12,7 +30,7 @@ export const createServer = (port: number) => {
     DELETE: app.delete.bind(app),
   };
 
-  const registeredMiddleware: Set<string> = new Set(); // Track registered middleware
+  const registeredMiddlewarePaths = new Set<string>();
 
   const applyMiddlewares = (dir: string) => {
     const files = fs.readdirSync(dir);
@@ -23,9 +41,8 @@ export const createServer = (port: number) => {
       if (stat.isDirectory()) {
         applyMiddlewares(filePath);
       } else {
-        if (isMiddlewareFile(file) && !registeredMiddleware.has(filePath)) {
+        if (isMiddlewareFile(file)) {
           registerMiddlewareFromFile(filePath);
-          registeredMiddleware.add(filePath); // Mark middleware as registered
         }
       }
     });
@@ -88,9 +105,11 @@ export const createServer = (port: number) => {
   const registerMiddlewareFromFile = (filePath: string) => {
     const extname = path.extname(filePath);
     if (extname === ".ts" || extname === ".js") {
-      const middleware = require(filePath).default;
-      console.log(`Registering middleware: ${filePath}`);
-      app.use(middleware);
+      if (!registeredMiddlewarePaths.has(filePath)) {
+        const middleware = require(filePath).default;
+        app.use(middleware);
+        registeredMiddlewarePaths.add(filePath);
+      }
     }
   };
 
@@ -100,7 +119,8 @@ export const createServer = (port: number) => {
   applyMiddlewares(routesDir);
   loadRoutes(routesDir);
 
+  const port = config.port || 6969;
   app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port http://localhost:${port}`);
   });
 };

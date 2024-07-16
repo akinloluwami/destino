@@ -1,3 +1,3 @@
-import { createServer } from "../src/index";
+import { createServer } from "../index";
 
-createServer(8989);
+createServer();
