@@ -19,29 +19,67 @@ export const createServer = (port: number) => {
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
-        loadRoutes(filePath);
-      } else {
-        const extname = path.extname(filePath);
-        if (extname === ".ts" || extname === ".js") {
-          const route = require(filePath);
-          let routePath = path.relative(routesDir, filePath);
-          routePath = routePath.replace(/\.[^/.]+$/, "");
-          routePath = routePath.replace(/\\/g, "/");
-          routePath = `/${routePath}`;
+        const indexFilePath = path.join(filePath, "index.ts");
+        const indexJsFilePath = path.join(filePath, "index.js");
 
-          routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
-
-          console.log(`Registering route: ${routePath}`);
-          Object.keys(route).forEach((method) => {
-            const handler = route[method];
-            const expressMethod = methodMap[method.toUpperCase()];
-            if (expressMethod) {
-              expressMethod(routePath, handler);
-            } else {
-              console.warn(`Unknown method ${method} in file ${file}`);
-            }
-          });
+        if (fs.existsSync(indexFilePath)) {
+          registerRoute("/", indexFilePath, path.relative(routesDir, filePath));
+        } else if (fs.existsSync(indexJsFilePath)) {
+          registerRoute(
+            "/",
+            indexJsFilePath,
+            path.relative(routesDir, filePath)
+          );
+        } else {
+          loadRoutes(filePath);
         }
+      } else {
+        registerRouteFromFile(filePath);
+      }
+    });
+  };
+
+  const registerRouteFromFile = (filePath: string) => {
+    const extname = path.extname(filePath);
+    if (extname === ".ts" || extname === ".js") {
+      const route = require(filePath);
+      let routePath = path.relative(routesDir, filePath);
+      routePath = routePath.replace(/\.[^/.]+$/, "");
+      routePath = routePath.replace(/\\/g, "/");
+      routePath = `/${routePath}`;
+
+      routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
+
+      console.log(`Registering route: ${routePath}`);
+      Object.keys(route).forEach((method) => {
+        const handler = route[method];
+        const expressMethod = methodMap[method.toUpperCase()];
+        if (expressMethod) {
+          expressMethod(routePath, handler);
+        } else {
+          console.warn(`Unknown method ${method} in file ${filePath}`);
+        }
+      });
+    }
+  };
+
+  const registerRoute = (
+    routePath: string,
+    filePath: string,
+    parentDir: string
+  ) => {
+    const route = require(filePath);
+    routePath = path.join("/", parentDir).replace(/\\/g, "/");
+    routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
+
+    console.log(`Registering route: ${routePath}`);
+    Object.keys(route).forEach((method) => {
+      const handler = route[method];
+      const expressMethod = methodMap[method.toUpperCase()];
+      if (expressMethod) {
+        expressMethod(routePath, handler);
+      } else {
+        console.warn(`Unknown method ${method} in file ${filePath}`);
       }
     });
   };
