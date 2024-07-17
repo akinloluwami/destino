@@ -23,6 +23,14 @@ export const createServer = () => {
     app.use(express.urlencoded({ extended: true }));
   }
 
+  if (config.serveStatic && Array.isArray(config.serveStatic)) {
+    config.serveStatic.forEach((staticConfig) => {
+      const folder = staticConfig.folder;
+      const route = staticConfig.route || "/";
+      app.use(route, express.static(path.resolve(folder)));
+    });
+  }
+
   const methodMap: { [key: string]: Function } = {
     GET: app.get.bind(app),
     POST: app.post.bind(app),
