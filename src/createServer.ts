@@ -115,7 +115,13 @@ export const createServer = () => {
     if (extname === ".ts" || extname === ".js") {
       if (!registeredMiddlewarePaths.has(filePath)) {
         const middleware = require(filePath).default;
-        app.use(middleware);
+        const relativePath = path.relative(routesDir, filePath);
+        let middlewareBasePath = path.dirname(relativePath).replace(/\\/g, "/");
+
+        middlewareBasePath = `/${middlewareBasePath}`;
+
+        console.log(`Registering middleware for: ${middlewareBasePath}`);
+        app.use(middlewareBasePath, middleware);
         registeredMiddlewarePaths.add(filePath);
       }
     }
