@@ -7,6 +7,7 @@ export interface Config {
     route?: string;
   }[];
   cors?: CorsConfig | CorsConfig[];
+  rateLimit?: RateLimitConfig | RateLimitConfig[];
 }
 
 interface CorsConfig {
@@ -18,5 +19,15 @@ interface CorsConfig {
     exposedHeaders?: string | string[];
     credentials?: boolean;
     maxAge?: number;
+  };
+}
+
+export interface RateLimitConfig {
+  route?: string;
+  options: {
+    duration: string;
+    max: number;
+    message?: string;
+    headers?: boolean;
   };
 }

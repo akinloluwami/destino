@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import cors from "cors";
 import { Config } from "./config.type";
+import { applyRateLimit } from "./middlewares/rate-limit";
 
 export const createServer = () => {
   const app: Express = express();
@@ -23,6 +24,8 @@ export const createServer = () => {
   if (config.enableUrlencoded) {
     app.use(express.urlencoded({ extended: true }));
   }
+
+  applyRateLimit(app, config);
 
   if (config.serveStatic && Array.isArray(config.serveStatic)) {
     config.serveStatic.forEach((staticConfig) => {
