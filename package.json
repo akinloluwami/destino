@@ -1,0 +1,17 @@
+{
+  "name": "destinyjs",
+  "version": "1.0.0",
+  "description": "File-based routing framework based on Express",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Akinkunmi",
+  "repository": "https://github.com/akinloluwami/destinyjs",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.1.3"
+  }
+}
