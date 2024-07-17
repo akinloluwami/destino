@@ -1,13 +1,12 @@
 import { Config } from "../index";
 
 export default {
-  rateLimit: {
-    route: "/*",
+  port: 4242,
+  cors: {
     options: {
-      duration: "2m",
-      max: 5,
-      message: "Too many requests, please try again later.",
-      headers: true,
+      origin: "*",
     },
   },
+  enableJsonParser: true,
+  enableUrlencoded: true,
 } satisfies Config;
