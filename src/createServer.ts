@@ -1,6 +1,7 @@
 import express, { Express } from "express";
 import fs from "fs";
 import path from "path";
+import cors from "cors";
 import { Config } from "./config.type";
 
 export const createServer = () => {
@@ -29,6 +30,16 @@ export const createServer = () => {
       const route = staticConfig.route || "/";
       app.use(route, express.static(path.resolve(folder)));
     });
+  }
+
+  if (config.cors) {
+    if (Array.isArray(config.cors)) {
+      config.cors.forEach((corsConfig) => {
+        app.use(corsConfig.route!, cors(corsConfig.options));
+      });
+    } else {
+      app.use(cors(config.cors.options));
+    }
   }
 
   const methodMap: { [key: string]: Function } = {

@@ -6,4 +6,17 @@ export interface Config {
     folder: string;
     route?: string;
   }[];
+  cors?: CorsConfig | CorsConfig[];
+}
+
+interface CorsConfig {
+  route?: string;
+  options: {
+    origin?: string | string[];
+    methods?: string | string[];
+    allowedHeaders?: string | string[];
+    exposedHeaders?: string | string[];
+    credentials?: boolean;
+    maxAge?: number;
+  };
 }
