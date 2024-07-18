@@ -1,9 +1,9 @@
 {
   "name": "@destiny-js/core",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "File-based routing framework based on Express",
   "scripts": {
-    "build": "tsc"
+    "pub": "tsc && npm version patch --force && npm publish"
   },
   "author": "Akinkunmi",
   "repository": "https://github.com/akinloluwami/destiny",
