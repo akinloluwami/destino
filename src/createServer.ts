@@ -9,12 +9,42 @@ export const createServer = () => {
   const app: Express = express();
 
   let config: Config;
+
+  const defaultConfig: Config = {
+    enableJsonParser: false,
+    enableUrlencoded: false,
+    serveStatic: undefined,
+    cors: undefined,
+    port: 6969,
+    rateLimit: undefined,
+  };
+
+  const jsConfigPath = path.resolve(process.cwd(), "destiny.config.js");
+  const tsConfigPath = path.resolve(process.cwd(), "destiny.config.ts");
+
   try {
-    const configPath = path.resolve(process.cwd(), "destiny.config");
-    config = require(configPath).default;
+    let configPath;
+    if (fs.existsSync(jsConfigPath)) {
+      configPath = jsConfigPath;
+    } else if (fs.existsSync(tsConfigPath)) {
+      require("ts-node").register();
+      configPath = tsConfigPath;
+    }
+
+    if (configPath) {
+      console.log("Loading config...⌛");
+      config = { ...defaultConfig, ...require(configPath) };
+      console.log("Config loaded. ✅");
+    } else {
+      console.log("Config file is not present. Using default. ☑️");
+      config = defaultConfig;
+    }
   } catch (error) {
-    console.log("Config file is not present. Using default.");
-    config = {} as Config;
+    console.error(
+      "Error loading config file. Using default configuration.",
+      error
+    );
+    config = defaultConfig;
   }
 
   if (config.enableJsonParser) {
@@ -147,7 +177,7 @@ export const createServer = () => {
   applyMiddlewares(routesDir);
   loadRoutes(routesDir);
 
-  const port = config.port || 6969;
+  const port = config.port;
   app.listen(port, () => {
     console.log(`Server is running on port http://localhost:${port}`);
   });
