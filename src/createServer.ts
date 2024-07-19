@@ -8,11 +8,12 @@ import { applyRateLimit } from "./middlewares/rate-limit";
 export const createServer = () => {
   const app: Express = express();
 
-  let config: Config;
   let routeCount = 0;
 
+  let config: Config;
+
   const defaultConfig: Config = {
-    enableJsonParser: false,
+    enableJsonParser: true,
     enableUrlencoded: false,
     serveStatic: undefined,
     cors: undefined,
@@ -20,8 +21,8 @@ export const createServer = () => {
     rateLimit: undefined,
   };
 
-  const jsConfigPath = path.resolve(process.cwd(), "destiny.config.js");
-  const tsConfigPath = path.resolve(process.cwd(), "destiny.config.ts");
+  const jsConfigPath = path.resolve(process.cwd(), "destino.config.js");
+  const tsConfigPath = path.resolve(process.cwd(), "destino.config.ts");
 
   try {
     let configPath;
@@ -34,7 +35,16 @@ export const createServer = () => {
 
     if (configPath) {
       console.log("Loading config...⌛");
-      config = { ...defaultConfig, ...require(configPath) };
+      const loadedConfig = require(configPath);
+
+      if (loadedConfig.default) {
+        config = loadedConfig.default;
+      } else {
+        config = loadedConfig;
+      }
+
+      config = { ...defaultConfig, ...config };
+
       console.log("Config loaded. ✅");
     } else {
       console.log("Config file is not present. Using default. ☑️");
@@ -46,8 +56,8 @@ export const createServer = () => {
       error
     );
     config = defaultConfig;
+    console.log("Current Config:", config);
   }
-
   if (config.enableJsonParser) {
     app.use(express.json());
   }
