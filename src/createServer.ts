@@ -9,6 +9,7 @@ export const createServer = () => {
   const app: Express = express();
 
   let config: Config;
+  let routeCount = 0;
 
   const defaultConfig: Config = {
     enableJsonParser: false,
@@ -141,12 +142,12 @@ export const createServer = () => {
 
       routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
 
-      console.log(`Registering route: ${routePath}`);
       Object.keys(route).forEach((method) => {
         const handler = route[method];
         const expressMethod = methodMap[method.toUpperCase()];
         if (expressMethod) {
           expressMethod(routePath, handler);
+          routeCount++;
         } else {
           console.warn(`Unknown method ${method} in file ${filePath}`);
         }
@@ -164,7 +165,6 @@ export const createServer = () => {
 
         middlewareBasePath = `/${middlewareBasePath}`;
 
-        console.log(`Registering middleware for: ${middlewareBasePath}`);
         app.use(middlewareBasePath, middleware);
         registeredMiddlewarePaths.add(filePath);
       }
@@ -175,7 +175,9 @@ export const createServer = () => {
   const routesDir = path.join(callerDir, "routes");
 
   applyMiddlewares(routesDir);
+  console.log("Registering routes...⌛");
   loadRoutes(routesDir);
+  console.log(`${routeCount} routes registered. ✅`);
 
   const port = config.port;
   app.listen(port, () => {
