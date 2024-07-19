@@ -3,10 +3,10 @@
   "version": "1.0.2",
   "description": "File-based routing framework based on Express",
   "scripts": {
-    "pub": "tsc && npm version patch --force && npm publish"
+    "pub": "tsc && npm version patch && npm publish"
   },
   "author": "Akinkunmi",
-  "repository": "https://github.com/akinloluwami/destiny",
+  "repository": "https://github.com/akinloluwami/destino",
   "license": "MIT",
   "dependencies": {
     "express": "^4.17.1"
