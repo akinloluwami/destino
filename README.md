@@ -1,3 +1,1 @@
-### DestinyJS
-
-Routes should be where they're MEANT TO BE.
+File-based routing backend framework based on Express.
