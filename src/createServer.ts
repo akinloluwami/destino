@@ -4,6 +4,7 @@ import path from "path";
 import cors from "cors";
 import { Config } from "./config.type";
 import { applyRateLimit } from "./middlewares/rate-limit";
+import { requestLogger } from "./middlewares/request-logger";
 
 export const createServer = () => {
   const app: Express = express();
@@ -59,6 +60,8 @@ export const createServer = () => {
     config = defaultConfig;
     console.log("Current Config:", config);
   }
+
+  app.use(requestLogger);
 
   if (config.enableJsonParser) {
     app.use(express.json());
