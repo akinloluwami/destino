@@ -5,6 +5,7 @@ import cors from "cors";
 import { Config } from "./config.type";
 import { applyRateLimit } from "./middlewares/rate-limit";
 import { requestLogger } from "./middlewares/request-logger";
+import { cookieParser } from "./middlewares/parse-cookies";
 
 export const createServer = () => {
   const app: Express = express();
@@ -16,7 +17,8 @@ export const createServer = () => {
 
   const defaultConfig: Config = {
     enableJsonParser: true,
-    enableUrlencoded: false,
+    enableUrlencoded: true,
+    enableCookieParser: true,
     serveStatic: undefined,
     cors: undefined,
     port: 6969,
@@ -69,6 +71,10 @@ export const createServer = () => {
 
   if (config.enableUrlencoded) {
     app.use(express.urlencoded({ extended: true }));
+  }
+
+  if (config.enableCookieParser) {
+    app.use(cookieParser);
   }
 
   applyRateLimit(app, config);
