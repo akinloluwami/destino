@@ -9,6 +9,7 @@
   "repository": "https://github.com/akinloluwami/destino",
   "license": "MIT",
   "dependencies": {
+    "ansi-colors": "^4.1.3",
     "express": "^4.17.1"
   },
   "devDependencies": {
