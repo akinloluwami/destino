@@ -36,7 +36,7 @@ export const createServer = () => {
     }
 
     if (configPath) {
-      console.log("Loading config...⌛");
+      // console.log("Loading config...⌛");
       const loadedConfig = require(configPath);
 
       if (loadedConfig.default) {
@@ -157,9 +157,6 @@ export const createServer = () => {
           //@ts-ignore
           app[method.toLowerCase()](routePath, handler);
           routeCount++;
-          console.log(
-            `Registered route: [${method.toUpperCase()}] ${routePath}`
-          );
         });
         registeredPaths.add(routePath);
       }
@@ -181,7 +178,6 @@ export const createServer = () => {
 
       app.use(middlewareBasePath, middleware);
       middlewareCount++;
-      console.log(`Registered middleware: ${middlewareBasePath}`);
       registeredPaths.add(filePath);
     }
   };
@@ -201,14 +197,20 @@ export const createServer = () => {
   const callerDir = path.dirname(require.main!.filename);
   const routesDir = path.join(callerDir, "routes");
 
-  console.log("Applying middlewares...⌛");
+  // console.log("Applying middlewares...⌛");
   const middlewares = applyMiddlewares(routesDir);
   registerMiddlewaresInOrder(middlewares);
-  console.log(`${middlewareCount} middlewares registered. ✅`);
+  console.log(
+    `${middlewareCount} middleware${
+      middlewareCount === 1 ? "" : "s"
+    } registered. ✅`
+  );
 
   console.log("Registering routes...⌛");
   loadRoutes(routesDir);
-  console.log(`${routeCount} routes registered. ✅`);
+  console.log(
+    `${routeCount} route${routeCount === 1 ? "" : "s"} registered. ✅`
+  );
 
   const port = config.port;
   app.listen(port, () => {
