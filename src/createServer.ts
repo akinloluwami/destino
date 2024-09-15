@@ -90,20 +90,22 @@ export const createServer = () => {
 
   const registeredPaths = new Set<string>();
 
-  const applyMiddlewares = (dir: string) => {
+  // Updated: Collect middlewares into an array
+  const applyMiddlewares = (dir: string, middlewares: string[] = []) => {
     const files = fs.readdirSync(dir);
+
     files.forEach((file) => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
-        applyMiddlewares(filePath);
-      } else {
-        if (isMiddlewareFile(file)) {
-          registerMiddlewareFromFile(filePath);
-        }
+        applyMiddlewares(filePath, middlewares);
+      } else if (isMiddlewareFile(file)) {
+        middlewares.push(filePath); // Collect middlewares
       }
     });
+
+    return middlewares;
   };
 
   const loadRoutes = (dir: string) => {
@@ -183,11 +185,26 @@ export const createServer = () => {
     }
   };
 
+  // New: Register middlewares in sorted order
+  const registerMiddlewaresInOrder = (middlewares: string[]) => {
+    const sortedMiddlewares = middlewares.sort((a, b) => {
+      const aDepth = a.split(path.sep).length;
+      const bDepth = b.split(path.sep).length;
+      return aDepth - bDepth;
+    });
+
+    // Apply middlewares in the correct order
+    sortedMiddlewares.forEach((filePath) => {
+      registerMiddlewareFromFile(filePath);
+    });
+  };
+
   const callerDir = path.dirname(require.main!.filename);
   const routesDir = path.join(callerDir, "routes");
 
   console.log("Applying middlewares...⌛");
-  applyMiddlewares(routesDir);
+  const middlewares = applyMiddlewares(routesDir);
+  registerMiddlewaresInOrder(middlewares);
   console.log(`${middlewareCount} middlewares registered. ✅`);
 
   console.log("Registering routes...⌛");
