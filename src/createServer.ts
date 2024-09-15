@@ -90,7 +90,6 @@ export const createServer = () => {
 
   const registeredPaths = new Set<string>();
 
-  // Updated: Collect middlewares into an array
   const applyMiddlewares = (dir: string, middlewares: string[] = []) => {
     const files = fs.readdirSync(dir);
 
@@ -101,7 +100,7 @@ export const createServer = () => {
       if (stat.isDirectory()) {
         applyMiddlewares(filePath, middlewares);
       } else if (isMiddlewareFile(file)) {
-        middlewares.push(filePath); // Collect middlewares
+        middlewares.push(filePath);
       }
     });
 
@@ -171,7 +170,6 @@ export const createServer = () => {
       const relativePath = path.relative(routesDir, filePath);
       let middlewareBasePath = path.dirname(relativePath).replace(/\\/g, "/");
 
-      // Handle root middleware
       if (middlewareBasePath === ".") {
         middlewareBasePath = "/";
       } else {
@@ -185,7 +183,6 @@ export const createServer = () => {
     }
   };
 
-  // New: Register middlewares in sorted order
   const registerMiddlewaresInOrder = (middlewares: string[]) => {
     const sortedMiddlewares = middlewares.sort((a, b) => {
       const aDepth = a.split(path.sep).length;
@@ -193,7 +190,6 @@ export const createServer = () => {
       return aDepth - bDepth;
     });
 
-    // Apply middlewares in the correct order
     sortedMiddlewares.forEach((filePath) => {
       registerMiddlewareFromFile(filePath);
     });
