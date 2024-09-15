@@ -8,6 +8,7 @@ export interface Config {
   }[];
   cors?: CorsConfig | CorsConfig[];
   rateLimit?: RateLimitConfig | RateLimitConfig[];
+  enableCookieParser?: boolean;
 }
 
 interface CorsConfig {
