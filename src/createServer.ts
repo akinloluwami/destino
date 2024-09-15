@@ -9,6 +9,7 @@ export const createServer = () => {
   const app: Express = express();
 
   let routeCount = 0;
+  let middlewareCount = 0;
 
   let config: Config;
 
@@ -58,6 +59,7 @@ export const createServer = () => {
     config = defaultConfig;
     console.log("Current Config:", config);
   }
+
   if (config.enableJsonParser) {
     app.use(express.json());
   }
@@ -86,14 +88,7 @@ export const createServer = () => {
     }
   }
 
-  const methodMap: { [key: string]: Function } = {
-    GET: app.get.bind(app),
-    POST: app.post.bind(app),
-    PUT: app.put.bind(app),
-    DELETE: app.delete.bind(app),
-  };
-
-  const registeredMiddlewarePaths = new Set<string>();
+  const registeredPaths = new Set<string>();
 
   const applyMiddlewares = (dir: string) => {
     const files = fs.readdirSync(dir);
@@ -118,7 +113,6 @@ export const createServer = () => {
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
-        applyMiddlewares(filePath);
         loadRoutes(filePath);
       } else {
         if (!isMiddlewareFile(file)) {
@@ -152,39 +146,50 @@ export const createServer = () => {
 
       routePath = routePath.replace(/\[([^[\]]+)\]/g, ":$1");
 
-      Object.keys(route).forEach((method) => {
-        const handler = route[method];
-        const expressMethod = methodMap[method.toUpperCase()];
-        if (expressMethod) {
-          expressMethod(routePath, handler);
+      if (!registeredPaths.has(routePath)) {
+        Object.keys(route).forEach((method) => {
+          const handler = route[method];
+
+          //@ts-ignore
+          app[method.toLowerCase()](routePath, handler);
           routeCount++;
-        } else {
-          console.warn(`Unknown method ${method} in file ${filePath}`);
-        }
-      });
+          console.log(
+            `Registered route: [${method.toUpperCase()}] ${routePath}`
+          );
+        });
+        registeredPaths.add(routePath);
+      }
     }
   };
 
   const registerMiddlewareFromFile = (filePath: string) => {
     const extname = path.extname(filePath);
     if (extname === ".ts" || extname === ".js") {
-      if (!registeredMiddlewarePaths.has(filePath)) {
-        const middleware = require(filePath).default;
-        const relativePath = path.relative(routesDir, filePath);
-        let middlewareBasePath = path.dirname(relativePath).replace(/\\/g, "/");
+      const middleware = require(filePath).default;
+      const relativePath = path.relative(routesDir, filePath);
+      let middlewareBasePath = path.dirname(relativePath).replace(/\\/g, "/");
 
+      // Handle root middleware
+      if (middlewareBasePath === ".") {
+        middlewareBasePath = "/";
+      } else {
         middlewareBasePath = `/${middlewareBasePath}`;
-
-        app.use(middlewareBasePath, middleware);
-        registeredMiddlewarePaths.add(filePath);
       }
+
+      app.use(middlewareBasePath, middleware);
+      middlewareCount++;
+      console.log(`Registered middleware: ${middlewareBasePath}`);
+      registeredPaths.add(filePath);
     }
   };
 
   const callerDir = path.dirname(require.main!.filename);
   const routesDir = path.join(callerDir, "routes");
 
+  console.log("Applying middlewares...⌛");
   applyMiddlewares(routesDir);
+  console.log(`${middlewareCount} middlewares registered. ✅`);
+
   console.log("Registering routes...⌛");
   loadRoutes(routesDir);
   console.log(`${routeCount} routes registered. ✅`);
