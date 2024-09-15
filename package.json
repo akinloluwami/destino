@@ -1,6 +1,6 @@
 {
   "name": "destino",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "File-based routing framework based on Express",
   "scripts": {
     "pub": "tsc && npm version patch && npm publish"
