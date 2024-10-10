@@ -63,7 +63,7 @@ export const createServer = () => {
     console.log("Current Config:", config);
   }
 
-  app.use(requestLogger);
+  app.use(requestLogger(jsConfigPath || tsConfigPath));
 
   if (config.enableJsonParser) {
     app.use(express.json());
@@ -139,6 +139,8 @@ export const createServer = () => {
     );
   };
 
+  const registeredEndpoints: { method: string; path: string }[] = [];
+
   const registerRouteFromFile = (filePath: string) => {
     const extname = path.extname(filePath);
     if (extname === ".ts" || extname === ".js") {
@@ -162,6 +164,10 @@ export const createServer = () => {
 
           //@ts-ignore
           app[method.toLowerCase()](routePath, handler);
+          registeredEndpoints.push({
+            method: method.toUpperCase(),
+            path: routePath,
+          });
           routeCount++;
         });
         registeredPaths.add(routePath);
@@ -217,6 +223,10 @@ export const createServer = () => {
   console.log(
     `${routeCount} route${routeCount === 1 ? "" : "s"} registered. ✅`
   );
+
+  app.get("/@/destino/endpoints", (req, res) => {
+    res.json(registeredEndpoints);
+  });
 
   const port = config.port;
   app.listen(port, () => {
