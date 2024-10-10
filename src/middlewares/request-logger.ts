@@ -2,7 +2,7 @@ import colors from "ansi-colors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { ensureDirSync } from "fs-extra"; // To ensure the directory is created
+import { ensureDirSync } from "fs-extra";
 
 export const requestLogger = (configFilePath: string) => {
   const configDir = path.dirname(configFilePath);
@@ -13,18 +13,20 @@ export const requestLogger = (configFilePath: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const start = process.hrtime();
 
-    // Store the original send method
     const originalSend = res.send;
 
     let responseBody: any;
 
-    // Override res.send to capture the response body
     res.send = function (body) {
-      responseBody = body; // Capture the response body here
-      return originalSend.call(this, body); // Call the original send method
+      responseBody = body;
+      return originalSend.call(this, body);
     };
 
     res.on("finish", () => {
+      if (req.originalUrl.startsWith("/@/destino")) {
+        return;
+      }
+
       const [seconds, nanoseconds] = process.hrtime(start);
       const durationInMilliseconds = (
         seconds * 1000 +
@@ -53,14 +55,13 @@ export const requestLogger = (configFilePath: string) => {
 
       console.log(logMessage);
 
-      // Log request and response
       const logEntry = {
         method: req.method,
         url: req.originalUrl,
         statusCode: res.statusCode,
         duration: Number(durationInMilliseconds),
         requestBody: req.body,
-        responseBody: responseBody, // Now capturing the response body
+        responseBody: responseBody,
         timestamp: new Date().toISOString(),
       };
 
